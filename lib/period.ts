@@ -1,6 +1,8 @@
 import { ISO_DATE, dayjs, today } from "./dates";
 
 export const PRESETS = {
+  today: "Aujourd'hui",
+  yesterday: "Hier",
   week: "Cette semaine",
   month: "Ce mois",
   year: "Cette année",
@@ -45,6 +47,19 @@ export function parsePeriod(params: { preset?: string | string[]; from?: string 
 
   const requested = params.preset;
   const preset: Exclude<Preset, "custom"> = isPreset(requested) && requested !== "custom" ? requested : DEFAULT_PRESET;
+
+  if (preset === "today" || preset === "yesterday") {
+    const day = preset === "today" ? now : now.subtract(1, "day");
+    const before = day.subtract(1, "day");
+    return {
+      preset,
+      from: fmt(day),
+      to: fmt(day),
+      label: PRESETS[preset],
+      previous: { from: fmt(before), to: fmt(before) },
+      previousLabel: preset === "today" ? "hier" : "avant-hier",
+    };
+  }
 
   if (preset === "30d" || preset === "12m") {
     const start = preset === "30d" ? now.subtract(29, "day") : now.subtract(12, "month").add(1, "day");

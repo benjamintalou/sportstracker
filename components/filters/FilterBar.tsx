@@ -13,6 +13,8 @@ import { useFilterTransition } from "./FilterTransition";
 import { MoveIqSettings, type SpeedSettings } from "./MoveIqSettings";
 
 const PRESET_SHORT: Record<Preset, string> = {
+  today: "Auj.",
+  yesterday: "Hier",
   week: "Semaine",
   month: "Mois",
   year: "Année",
