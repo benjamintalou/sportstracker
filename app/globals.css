@@ -1,0 +1,77 @@
+:root {
+  --app-glow: radial-gradient(60rem 30rem at 85% -10%, rgba(247, 119, 34, 0.12), transparent 60%),
+    radial-gradient(50rem 30rem at -10% 10%, rgba(34, 184, 207, 0.08), transparent 60%);
+}
+
+body {
+  background-image: var(--app-glow);
+  background-attachment: fixed;
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-8));
+}
+
+/* Durations and stats line up nicely in columns */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Theme toggle icons: pick by the color scheme attribute set before hydration */
+[data-mantine-color-scheme="light"] .theme-icon-light,
+[data-mantine-color-scheme="dark"] .theme-icon-dark {
+  display: none;
+}
+
+/*
+ * Data-viz tokens, validated with the dataviz skill (CVD + contrast) in both schemes.
+ * Sport hues are categorical: rendered in SPORT_CATEGORIES order, always with a text label.
+ * HR zones are a single-hue ordinal ramp, Z1 → Z5.
+ */
+:root,
+[data-mantine-color-scheme="light"] {
+  --sport-run: #eb6834;
+  --sport-trail: #6250d6;
+  --sport-run_indoor: #008300;
+  --sport-bike: #2a78d6;
+  --sport-bike_indoor: #e34948;
+  --sport-swim: #1baf7a;
+  --sport-other: #eda100;
+  --zone-1: #ff8787;
+  --zone-2: #f55a5a;
+  --zone-3: #e03131;
+  --zone-4: #b82525;
+  --zone-5: #8a1c1c;
+  --viz-track: var(--mantine-color-gray-1);
+  --positive: var(--mantine-color-teal-8);
+  --negative: var(--mantine-color-red-8);
+}
+
+[data-mantine-color-scheme="dark"] {
+  --sport-run: #d95926;
+  --sport-trail: #9085e9;
+  --sport-run_indoor: #008300;
+  --sport-bike: #3987e5;
+  --sport-bike_indoor: #e66767;
+  --sport-swim: #199e70;
+  --sport-other: #c98500;
+  --zone-1: #a33a3a;
+  --zone-2: #cc4a4a;
+  --zone-3: #e86f6f;
+  --zone-4: #f5a0a0;
+  --zone-5: #ffd5d5;
+  --viz-track: var(--mantine-color-dark-5);
+  --positive: var(--mantine-color-teal-4);
+  --negative: var(--mantine-color-red-4);
+}
+
+/* Brighter body text in dark mode so headline numbers don't look washed out */
+[data-mantine-color-scheme="dark"] {
+  --mantine-color-text: #ececec;
+}
