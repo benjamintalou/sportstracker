@@ -53,7 +53,7 @@ The mapping lives in one typed module (`lib/sports.ts`). Unknown types fall back
 ### 4.0 Menu and pages (added 2026-11-07)
 - Header menu: **Vélo** (`/`, home), **Sommeil** (`/sleep`), **Statistiques** (`/stats`, the dashboard of §4.2). Icons only on phones.
 - **Vélo**: six cards, cycling only (bike + bike_indoor, Move IQ included with estimated km labelled): total km over the rolling 7 days, 30 days and 12 months, and km per calendar day for each.
-  Below, a chart of the average speed per day over the last 24 months (dots) with a 30-day rolling average (line): outdoor rides, Move IQ trips included (their speed is the user's setting), indoor rides excluded (simulated speed). Move IQ is fetched over 24 months for it (one call per day, cached).
+  Below, a chart of km per day over the last 24 months (dots on ride days) with the 30-day rolling km/day (line, rest days included), same scope as the cards. Move IQ is fetched over 24 months for it (one call per day, cached).
 - **Sommeil**: for each rolling window (7 d / 30 d / 12 months), average sleep HR and the lowest sleep HR reached (with its night), then a quality table: sleep score, duration, deep / REM / light stages, awake time, resting HR, overnight HRV, respiration. Source: `/wellness-service/wellness/dailySleepData/{displayName}?date=&nonSleepBufferMinutes=60`, one call per night, cached per day like Move IQ; undocumented payload parsed tolerantly (`lib/garmin/sleep.ts`).
 
 ### 4.2 Dashboard (`/stats`)

@@ -8,7 +8,7 @@ Personal dashboard of real time spent on Garmin activities. Full spec: `docs/spe
 - `npm run build` / `npm run lint` / `npm run typecheck`
 
 ## Pages
-- `/` Vélo: km on rolling 7 d / 30 d / 12 months, km per day (Move IQ estimated km labelled), and a 24-month daily speed chart (`components/dashboard/SpeedChart.tsx`, `lib/speed.ts`).
+- `/` Vélo: km on rolling 7 d / 30 d / 12 months, km per day (Move IQ estimated km labelled), and a 24-month km-per-day chart (`components/dashboard/DistanceChart.tsx`, `lib/daily-distance.ts`).
 - `/sleep` Sommeil: sleep HR (average + lowest) and quality per rolling window.
 - `/stats` advanced stats dashboard (period + sport filters). Menu: `components/shell/MainNav.tsx`.
 

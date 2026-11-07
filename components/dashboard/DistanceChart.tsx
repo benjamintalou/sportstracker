@@ -5,17 +5,17 @@ import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { useMemo } from "react";
 import { CartesianGrid, ComposedChart, Line, ResponsiveContainer, Scatter, Tooltip, XAxis, YAxis } from "recharts";
-import type { SpeedPoint } from "@/lib/speed";
+import type { DistancePoint } from "@/lib/daily-distance";
 
 const COLOR = "var(--sport-bike)";
 const AXIS = "var(--mantine-color-dimmed)";
 const GRID = "var(--viz-track)";
-const kmh = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const km = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
-type Row = SpeedPoint & { t: number };
+type Row = DistancePoint & { t: number };
 
-/** Daily average cycling speed (dots) with its 30-day rolling average (line), one hue: both are the same entity. */
-export function SpeedChart({ points, rollingDays }: { points: SpeedPoint[]; rollingDays: number }) {
+/** Km ridden per day (dots) with the 30-day rolling km/day (line), one hue: both are the same entity. */
+export function DistanceChart({ points, rollingDays }: { points: DistancePoint[]; rollingDays: number }) {
   const rows = useMemo<Row[]>(() => points.map((p) => ({ ...p, t: dayjs(p.date).valueOf() })), [points]);
 
   // A tick on the first day of every third month.
@@ -24,15 +24,12 @@ export function SpeedChart({ points, rollingDays }: { points: SpeedPoint[]; roll
     [rows],
   );
 
-  // Round bounds and evenly spaced ticks (2 or 5 km/h apart) so labels never collide.
-  const { min, max, yTicks } = useMemo(() => {
-    const values = rows.flatMap((r) => [r.day, r.rolling]).filter((v): v is number => v !== null);
-    const lo = Math.min(...values);
-    const hi = Math.max(...values);
-    const step = hi - lo > 12 ? 5 : 2;
-    const from = Math.max(0, Math.floor(lo / step) * step);
-    const to = Math.ceil(hi / step) * step;
-    return { min: from, max: to, yTicks: Array.from({ length: (to - from) / step + 1 }, (_, i) => from + i * step) };
+  // Zero baseline (km are magnitudes) and a round step giving ~5 ticks, so labels never collide.
+  const { max, yTicks } = useMemo(() => {
+    const hi = Math.max(1, ...rows.flatMap((r) => [r.day ?? 0, r.rolling]));
+    const step = [5, 10, 20, 25, 50, 100, 200].find((s) => hi / s <= 5) ?? 250;
+    const top = Math.ceil(hi / step) * step;
+    return { max: top, yTicks: Array.from({ length: top / step + 1 }, (_, i) => i * step) };
   }, [rows]);
 
   return (
@@ -40,11 +37,11 @@ export function SpeedChart({ points, rollingDays }: { points: SpeedPoint[]; roll
       <Group gap="lg" aria-hidden>
         <Group gap={6} wrap="nowrap">
           <Box w={8} h={8} style={{ borderRadius: "50%", background: COLOR, opacity: 0.45 }} />
-          <Text fz="sm">Moyenne du jour</Text>
+          <Text fz="sm">Km du jour</Text>
         </Group>
         <Group gap={6} wrap="nowrap">
           <Box w={16} h={2} style={{ borderRadius: 1, background: COLOR }} />
-          <Text fz="sm">Moyenne glissante {rollingDays} jours</Text>
+          <Text fz="sm">Moyenne par jour sur {rollingDays} jours glissants</Text>
         </Group>
       </Group>
       <Box h={{ base: 240, sm: 300 }}>
@@ -64,17 +61,17 @@ export function SpeedChart({ points, rollingDays }: { points: SpeedPoint[]; roll
               minTickGap={16}
             />
             <YAxis
-              domain={[min, max]}
+              domain={[0, max]}
               ticks={yTicks}
               allowDecimals={false}
               tickFormatter={(v: number) => `${v}`}
               tick={{ fill: AXIS, fontSize: 12 }}
               axisLine={false}
               tickLine={false}
-              unit=" km/h"
-              width={72}
+              unit=" km"
+              width={64}
             />
-            <Tooltip cursor={{ stroke: AXIS, strokeWidth: 1 }} content={(props) => <SpeedTooltip active={props.active} payload={props.payload as unknown as { payload: Row }[]} />} isAnimationActive={false} />
+            <Tooltip cursor={{ stroke: AXIS, strokeWidth: 1 }} content={(props) => <DistanceTooltip active={props.active} payload={props.payload as unknown as { payload: Row }[]} />} isAnimationActive={false} />
             <Scatter dataKey="day" fill={COLOR} fillOpacity={0.45} shape="circle" isAnimationActive={false} legendType="none" r={2.5} />
             <Line
               dataKey="rolling"
@@ -94,7 +91,7 @@ export function SpeedChart({ points, rollingDays }: { points: SpeedPoint[]; roll
   );
 }
 
-function SpeedTooltip({ active, payload }: { active?: boolean; payload?: readonly { payload: Row }[] }) {
+function DistanceTooltip({ active, payload }: { active?: boolean; payload?: readonly { payload: Row }[] }) {
   const row = payload?.[0]?.payload;
   if (!active || !row) return null;
   return (
@@ -102,8 +99,8 @@ function SpeedTooltip({ active, payload }: { active?: boolean; payload?: readonl
       <Text fz="xs" fw={600} mb={4}>
         {dayjs(row.date).locale("fr").format("dddd D MMMM YYYY")}
       </Text>
-      <TooltipRow dot label="Moyenne du jour" value={row.day === null ? "pas de sortie" : `${kmh.format(row.day)} km/h`} />
-      <TooltipRow label="Glissante 30 j" value={row.rolling === null ? "—" : `${kmh.format(row.rolling)} km/h`} />
+      <TooltipRow dot label="Km du jour" value={row.day === null ? "pas de sortie" : `${km.format(row.day)} km`} />
+      <TooltipRow label="Moyenne 30 j" value={`${km.format(row.rolling)} km/jour`} />
     </Paper>
   );
 }

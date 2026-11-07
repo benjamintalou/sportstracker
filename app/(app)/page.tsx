@@ -2,15 +2,15 @@ import { Alert, Card, Group, SimpleGrid, Skeleton, Stack, Text, ThemeIcon, Title
 import { IconAlertTriangle, IconCalendarStats, IconRoute, type Icon } from "@tabler/icons-react";
 import { connection } from "next/server";
 import { Suspense } from "react";
-import { SpeedChart } from "@/components/dashboard/SpeedChart";
+import { DistanceChart } from "@/components/dashboard/DistanceChart";
 import { GarminErrorState } from "@/components/GarminErrorState";
 import { getRangeActivities } from "@/lib/data/activities";
 import { GarminError } from "@/lib/garmin/errors";
 import { ISO_DATE, today } from "@/lib/dates";
-import { formatKm, formatSpeed } from "@/lib/format";
+import { formatKm } from "@/lib/format";
 import { inRange, rollingWindow, WINDOW_KEYS, WINDOWS, type RollingWindow } from "@/lib/period";
 import { getSpeeds } from "@/lib/prefs";
-import { dailySpeeds, countsForSpeed, ROLLING_DAYS } from "@/lib/speed";
+import { dailyDistances, ROLLING_DAYS } from "@/lib/daily-distance";
 
 export const metadata = { title: "Vélo" };
 
@@ -39,12 +39,12 @@ async function BikeStats() {
   const year = windows.at(-1)!;
   const speeds = await getSpeeds();
 
-  const speedRange = { from: today().subtract(24, "month").add(1, "day").format(ISO_DATE), to: year.to };
+  const chartRange = { from: today().subtract(24, "month").add(1, "day").format(ISO_DATE), to: year.to };
 
   let data;
   try {
-    // One fetch for the 24-month speed chart; the km windows are slices of it.
-    data = await getRangeActivities(speedRange, "cycling", { speeds });
+    // One fetch for the 24-month chart; the km windows are slices of it.
+    data = await getRangeActivities(chartRange, "cycling", { speeds });
   } catch (error) {
     if (!(error instanceof GarminError)) throw error;
     return <GarminErrorState error={error} />;
@@ -59,10 +59,9 @@ async function BikeStats() {
     };
   });
 
-  const speedPoints = dailySpeeds(data.activities, speedRange);
-  const rides = data.activities.filter(countsForSpeed);
-  const rideDays = new Set(rides.map((a) => a.date)).size;
-  const overall = rides.reduce((acc, a) => ({ d: acc.d + a.distance, t: acc.t + a.movingTime }), { d: 0, t: 0 });
+  const chartPoints = dailyDistances(data.activities, chartRange);
+  const chartTotal = chartPoints.reduce((sum, p) => sum + (p.day ?? 0), 0);
+  const rideDays = chartPoints.filter((p) => p.day !== null).length;
 
   return (
     <Stack gap="lg">
@@ -98,28 +97,28 @@ async function BikeStats() {
           ))}
         </SimpleGrid>
       </section>
-      <section aria-labelledby="bike-speed">
-        <Title id="bike-speed" order={2} fz="lg" mb={4}>
-          Vitesse moyenne par jour · 24 derniers mois
+      <section aria-labelledby="bike-chart">
+        <Title id="bike-chart" order={2} fz="lg" mb={4}>
+          Kilomètres par jour · 24 derniers mois
         </Title>
         <Text fz="sm" c="dimmed" mb="sm">
-          Sorties vélo en extérieur, trajets Move IQ inclus (vitesse estimée avec vos réglages), sans home trainer.
+          Toutes les sorties vélo, home trainer et trajets Move IQ (km estimés) compris.
         </Text>
         <Card padding="lg">
           {rideDays === 0 ? (
-            <Text c="dimmed">Aucune sortie vélo en extérieur sur les 24 derniers mois.</Text>
+            <Text c="dimmed">Aucune sortie vélo sur les 24 derniers mois.</Text>
           ) : (
             <Stack gap="md">
               <Text fz="sm" className="tabular">
-                Moyenne sur 24 mois :{" "}
+                Total sur 24 mois :{" "}
                 <Text span fw={700}>
-                  {formatSpeed(overall.t > 0 ? overall.d / overall.t : null)}
+                  {formatKm(chartTotal * 1000)}
                 </Text>{" "}
                 <Text span c="dimmed">
-                  sur {rideDays} jours roulés
+                  · {formatKm((chartTotal * 1000) / chartPoints.length)} par jour · {rideDays} jours roulés
                 </Text>
               </Text>
-              <SpeedChart points={speedPoints} rollingDays={ROLLING_DAYS} />
+              <DistanceChart points={chartPoints} rollingDays={ROLLING_DAYS} />
             </Stack>
           )}
         </Card>
