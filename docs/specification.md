@@ -50,8 +50,13 @@ The mapping lives in one typed module (`lib/sports.ts`). Unknown types fall back
 - Logout clears the cookie.
 - Middleware/proxy redirects every route except `/login` to `/login` when there is no valid session.
 
-### 4.2 Dashboard (`/`)
-- **Period selector**: Cette semaine, Ce mois, Cette année, 30 derniers jours, 12 derniers mois, and Personnalisé (date range picker). State lives in the URL (`?from=YYYY-MM-DD&to=YYYY-MM-DD` or `?preset=month`), so it can be bookmarked and the back button works.
+### 4.0 Menu and pages (added 2026-11-07)
+- Header menu: **Vélo** (`/`, home), **Sommeil** (`/sleep`), **Statistiques** (`/stats`, the dashboard of §4.2). Icons only on phones.
+- **Vélo**: six cards, cycling only (bike + bike_indoor, Move IQ included with estimated km labelled): total km over the rolling 7 days, 30 days and 12 months, and km per calendar day for each.
+- **Sommeil**: for each rolling window (7 d / 30 d / 12 months), average sleep HR and the lowest sleep HR reached (with its night), then a quality table: sleep score, duration, deep / REM / light stages, awake time, resting HR, overnight HRV, respiration. Source: `/wellness-service/wellness/dailySleepData/{displayName}?date=&nonSleepBufferMinutes=60`, one call per night, cached per day like Move IQ; undocumented payload parsed tolerantly (`lib/garmin/sleep.ts`).
+
+### 4.2 Dashboard (`/stats`)
+- **Period selector** (default: 7 derniers jours): Aujourd'hui, Hier, Cette semaine, Ce mois, Cette année, 7 / 30 derniers jours, 12 derniers mois, and Personnalisé (date range picker). State lives in the URL (`?from=YYYY-MM-DD&to=YYYY-MM-DD` or `?preset=month`), so it can be bookmarked and the back button works.
 - **Sport filter**: segmented control: Tout / Course (run + trail + run_indoor) / Vélo (bike + bike_indoor) / each category. Also stored in the URL.
 - **KPI tiles** (for the period and filter):
   - Temps en mouvement (main metric, the biggest tile)
@@ -84,7 +89,7 @@ The mapping lives in one typed module (`lib/sports.ts`). Unknown types fall back
 ### 4.6 Move IQ (auto-detected movements)
 - Movements the watch detects on its own (bike commutes, walks, runs, swims) appear only in Garmin's daily timeline (`/wellness-service/wellness/dailyEvents?calendarDate=`), not in the activity list. They have a type and a duration, but no GPS, distance or heart rate.
 - Every Move IQ event is included and attached to its sport category: it counts in time totals and sport filters, and is shown hatched with a "Move IQ" label everywhere. It is not counted as an activity and is excluded from HR coverage.
-- Move IQ has no distance (no GPS). Distance is estimated as duration × an average speed per sport (defaults: bike 15, walk 5, run 10, swim 2 km/h), editable from the settings icon next to the switch and stored in the `gt_prefs` cookie. Estimated km count in the Distance total, always labelled "dont ≈ X km estimés (Move IQ)".
+- Move IQ has no distance (no GPS). Distance is estimated as duration × an average speed per sport (defaults: bike 15, walk 5, run 10, swim 2 km/h), editable from the "Réglages Move IQ" button in the header (app-wide, it also drives the Vélo page) and stored in the `gt_prefs` cookie. Estimated km count in the Distance total, always labelled "dont ≈ X km estimés (Move IQ)".
 - A "Move IQ" switch in the filters (`?moveiq=off`) excludes them. If the timeline fails, the dashboard still renders recorded activities, with a warning.
 - The endpoint needs one call per day, so days are cached on the server (past days never expire). The payload is undocumented, so parsing is tolerant; check it with the dev-only `/api/debug/daily-events?date=`.
 

@@ -6,6 +6,7 @@ export const PRESETS = {
   week: "Cette semaine",
   month: "Ce mois",
   year: "Cette année",
+  "7d": "7 derniers jours",
   "30d": "30 derniers jours",
   "12m": "12 derniers mois",
   custom: "Personnalisé",
@@ -15,7 +16,7 @@ export type Preset = keyof typeof PRESETS;
 export type DateRange = { from: string; to: string };
 export type Period = DateRange & { preset: Preset; label: string; previous: DateRange; previousLabel: string };
 
-export const DEFAULT_PRESET = "month" satisfies Preset;
+export const DEFAULT_PRESET = "7d" satisfies Preset;
 
 const isPreset = (value: unknown): value is Preset => typeof value === "string" && value in PRESETS;
 const isIsoDate = (value: unknown): value is string =>
@@ -61,8 +62,8 @@ export function parsePeriod(params: { preset?: string | string[]; from?: string 
     };
   }
 
-  if (preset === "30d" || preset === "12m") {
-    const start = preset === "30d" ? now.subtract(29, "day") : now.subtract(12, "month").add(1, "day");
+  if (preset === "7d" || preset === "30d" || preset === "12m") {
+    const start = rollingStart(preset, now);
     const days = now.diff(start, "day") + 1;
     return {
       preset,
@@ -70,7 +71,7 @@ export function parsePeriod(params: { preset?: string | string[]; from?: string 
       to: fmt(now),
       label: PRESETS[preset],
       previous: { from: fmt(start.subtract(days, "day")), to: fmt(start.subtract(1, "day")) },
-      previousLabel: preset === "30d" ? "les 30 jours précédents" : "les 12 mois précédents",
+      previousLabel: ROLLING_PREVIOUS[preset],
     };
   }
 
@@ -86,6 +87,12 @@ export function parsePeriod(params: { preset?: string | string[]; from?: string 
   };
 }
 
+const ROLLING_PREVIOUS = {
+  "7d": "les 7 jours précédents",
+  "30d": "les 30 jours précédents",
+  "12m": "les 12 mois précédents",
+} as const;
+
 const CALENDAR = {
   week: { startOf: "isoWeek", step: "week", previousLabel: "la semaine dernière" },
   month: { startOf: "month", step: "month", previousLabel: "le mois dernier" },
@@ -96,3 +103,27 @@ export const inRange = (date: string, range: DateRange) => date >= range.from &&
 
 /** Number of calendar days in the range, both ends included. */
 export const daysIn = (range: DateRange) => dayjs(range.to).diff(dayjs(range.from), "day") + 1;
+
+/** Rolling windows ending today (both ends included). */
+export const WINDOWS = {
+  "7d": { label: "7 derniers jours", short: "7 jours" },
+  "30d": { label: "30 derniers jours", short: "30 jours" },
+  "12m": { label: "12 derniers mois", short: "12 mois" },
+} as const;
+export type WindowKey = keyof typeof WINDOWS;
+export const WINDOW_KEYS = Object.keys(WINDOWS) as WindowKey[];
+
+function rollingStart(key: WindowKey, now: dayjs.Dayjs) {
+  if (key === "7d") return now.subtract(6, "day");
+  if (key === "30d") return now.subtract(29, "day");
+  return now.subtract(12, "month").add(1, "day");
+}
+
+export type RollingWindow = DateRange & { key: WindowKey; label: string; short: string; days: number };
+
+/** The rolling window `key` ending today. Call `await connection()` first in Server Components. */
+export function rollingWindow(key: WindowKey): RollingWindow {
+  const now = today();
+  const range = { from: fmt(rollingStart(key, now)), to: fmt(now) };
+  return { key, ...WINDOWS[key], ...range, days: daysIn(range) };
+}

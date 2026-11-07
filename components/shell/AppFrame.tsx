@@ -3,9 +3,18 @@
 import { AppShell, Group } from "@mantine/core";
 import Link from "next/link";
 import { Logo } from "./Logo";
+import { MainNav } from "./MainNav";
 import { ThemeToggle } from "./ThemeToggle";
 
-export function AppFrame({ children, userSlot }: { children: React.ReactNode; userSlot?: React.ReactNode }) {
+export function AppFrame({
+  children,
+  settingsSlot,
+  userSlot,
+}: {
+  children: React.ReactNode;
+  settingsSlot?: React.ReactNode;
+  userSlot?: React.ReactNode;
+}) {
   return (
     <AppShell
       header={{ height: 64 }}
@@ -19,6 +28,8 @@ export function AppFrame({ children, userSlot }: { children: React.ReactNode; us
           </Link>
 
           <Group gap="sm" wrap="nowrap">
+            <MainNav />
+            {settingsSlot}
             <ThemeToggle />
             {userSlot}
           </Group>

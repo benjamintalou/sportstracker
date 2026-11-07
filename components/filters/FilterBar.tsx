@@ -10,7 +10,6 @@ import { useState } from "react";
 import { SPORT_FILTERS, type SportFilter } from "@/lib/activity";
 import { PRESETS, type Preset } from "@/lib/period";
 import { useFilterTransition } from "./FilterTransition";
-import { MoveIqSettings, type SpeedSettings } from "./MoveIqSettings";
 
 const PRESET_SHORT: Record<Preset, string> = {
   today: "Auj.",
@@ -18,16 +17,17 @@ const PRESET_SHORT: Record<Preset, string> = {
   week: "Semaine",
   month: "Mois",
   year: "Année",
+  "7d": "7 j",
   "30d": "30 j",
   "12m": "12 mois",
   custom: "Dates",
 };
 
 type Filters = { preset: Preset; from: string; to: string; sport: SportFilter; moveIq: boolean };
-type Props = Filters & { today: string; speeds: SpeedSettings };
+type Props = Filters & { today: string };
 
 /** Period + sport filters, kept in the URL so views are shareable and the back button works. */
-export function FilterBar({ preset, from, to, sport, moveIq, today, speeds }: Props) {
+export function FilterBar({ preset, from, to, sport, moveIq, today }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useFilterTransition();
@@ -102,7 +102,6 @@ export function FilterBar({ preset, from, to, sport, moveIq, today, speeds }: Pr
             size="sm"
           />
         </Tooltip>
-        {moveIq && <MoveIqSettings speeds={speeds} />}
         <ScrollArea type="never" maw="100%">
           <SegmentedControl
             value={sport}

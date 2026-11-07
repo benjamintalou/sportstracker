@@ -2,7 +2,7 @@ import "server-only";
 import { cacheLife } from "next/cache";
 import { matchesSport, type Activity, type SportFilter } from "@/lib/activity";
 import { fetchActivities } from "@/lib/garmin/activities";
-import { inRange, type Period } from "@/lib/period";
+import { inRange, type DateRange, type Period } from "@/lib/period";
 import { SPEED_KEYS, type SpeedKey, type Speeds } from "@/lib/prefs";
 import { demoActivities, isDemo } from "./demo";
 import { getMoveIqActivities } from "./moveiq";
@@ -39,21 +39,27 @@ function withEstimatedDistance(activity: Activity, speeds: Speeds): Activity {
   return { ...activity, distance: Math.round(activity.movingTime * metersPerSecond), averageSpeed: metersPerSecond };
 }
 
-/** Activities of the period and of the comparison period (a single Garmin query for recorded ones). */
-export async function getPeriodActivities(
-  period: Period,
-  sport: SportFilter,
-  { moveIq = true, speeds }: { moveIq?: boolean; speeds: Speeds },
-) {
+type Options = { moveIq?: boolean; speeds: Speeds };
+
+/** Recorded + Move IQ activities of a range for a sport (Move IQ distance estimated from the user's speeds). */
+export async function getRangeActivities(range: DateRange, sport: SportFilter, { moveIq = true, speeds }: Options) {
   const [recorded, detected] = await Promise.all([
-    activitiesBetween(period.previous.from, period.to),
-    moveIq ? moveIqBetween(period.previous.from, period.to) : { activities: [], failed: false },
+    activitiesBetween(range.from, range.to),
+    moveIq ? moveIqBetween(range.from, range.to) : { activities: [], failed: false },
   ]);
   const estimated = detected.activities.map((a) => withEstimatedDistance(a, speeds));
-  const filtered = [...recorded, ...estimated].filter((a) => matchesSport(a, sport));
   return {
-    current: filtered.filter((a) => inRange(a.date, period)),
-    previous: filtered.filter((a) => inRange(a.date, period.previous)),
+    activities: [...recorded, ...estimated].filter((a) => matchesSport(a, sport)),
     moveIqFailed: detected.failed,
+  };
+}
+
+/** Activities of the period and of the comparison period (a single Garmin query for recorded ones). */
+export async function getPeriodActivities(period: Period, sport: SportFilter, options: Options) {
+  const { activities, moveIqFailed } = await getRangeActivities({ from: period.previous.from, to: period.to }, sport, options);
+  return {
+    current: activities.filter((a) => inRange(a.date, period)),
+    previous: activities.filter((a) => inRange(a.date, period.previous)),
+    moveIqFailed,
   };
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionIcon, Button, NumberInput, Popover, SimpleGrid, Stack, Text } from "@mantine/core";
+import { ActionIcon, Button, NumberInput, Popover, SimpleGrid, Stack, Text, Tooltip } from "@mantine/core";
 import { IconAdjustments } from "@tabler/icons-react";
 import { useActionState, useState } from "react";
 import { updateMoveIqSpeeds, type SpeedsState } from "@/app/(app)/actions";
@@ -14,7 +14,10 @@ const FIELDS: { name: keyof SpeedSettings; label: string }[] = [
   { name: "lap_swimming", label: "Natation" },
 ];
 
-/** Average speeds used to estimate Move IQ distances (Garmin records none for them). */
+/**
+ * Average speeds used to estimate Move IQ distances (Garmin records none for them).
+ * App-wide setting (header): it changes the km on every page, not just one view.
+ */
 export function MoveIqSettings({ speeds }: { speeds: SpeedSettings }) {
   const [opened, setOpened] = useState(false);
   const [state, action, pending] = useActionState<SpeedsState, FormData>(async (prev, formData) => {
@@ -26,9 +29,11 @@ export function MoveIqSettings({ speeds }: { speeds: SpeedSettings }) {
   return (
     <Popover opened={opened} onChange={setOpened} position="bottom-end" width={280} withArrow shadow="md" trapFocus>
       <Popover.Target>
-        <ActionIcon variant="subtle" color="gray" aria-label="Vitesses Move IQ" onClick={() => setOpened((o) => !o)}>
-          <IconAdjustments size={18} stroke={1.75} />
-        </ActionIcon>
+        <Tooltip label="Réglages Move IQ" disabled={opened}>
+          <ActionIcon variant="default" size="lg" radius="md" aria-label="Réglages Move IQ" onClick={() => setOpened((o) => !o)}>
+            <IconAdjustments size={18} stroke={1.75} />
+          </ActionIcon>
+        </Tooltip>
       </Popover.Target>
       <Popover.Dropdown>
         <form action={action}>
@@ -38,7 +43,7 @@ export function MoveIqSettings({ speeds }: { speeds: SpeedSettings }) {
                 Vitesses moyennes Move IQ
               </Text>
               <Text fz="xs" c="dimmed">
-                Garmin n&apos;enregistre pas de distance pour Move IQ : elle est estimée avec la durée × ces vitesses.
+                Garmin n&apos;enregistre pas de distance pour les déplacements Move IQ : elle est estimée avec la durée × ces vitesses, sur toutes les pages.
               </Text>
             </div>
             <SimpleGrid cols={2} spacing="xs">

@@ -1,5 +1,6 @@
 import type { Activity } from "@/lib/activity";
 import { dayjs } from "@/lib/dates";
+import type { Night } from "@/lib/sleep";
 import type { SportCategory } from "@/lib/sports";
 
 /** Dev-only: `GARMIN_DEMO=1 npm run dev` serves generated data without a Garmin session. */
@@ -107,6 +108,35 @@ export function demoMoveIq(from: string, to: string): Activity[] {
         location: null,
         hrZones: null,
       });
+    });
+  }
+  return out;
+}
+
+/** One night per day (a few missing), with plausible HR, stages and score. */
+export function demoSleep(from: string, to: string): Night[] {
+  const out: Night[] = [];
+  for (let d = dayjs(from); !d.isAfter(dayjs(to)); d = d.add(1, "day")) {
+    const r = rng(Number(d.format("YYYYMMDD")) + 13);
+    if (r() < 0.06) continue;
+    const sleep = Math.round((6 + r() * 2.5) * 3600);
+    const deep = Math.round(sleep * (0.13 + r() * 0.1));
+    const rem = Math.round(sleep * (0.18 + r() * 0.08));
+    const awake = Math.round(600 + r() * 2400);
+    const avgHr = Math.round((49 + r() * 9) * 10) / 10;
+    out.push({
+      date: d.format("YYYY-MM-DD"),
+      sleepSeconds: sleep,
+      deepSeconds: deep,
+      lightSeconds: sleep - deep - rem,
+      remSeconds: rem,
+      awakeSeconds: awake,
+      score: Math.round(55 + r() * 40),
+      avgHr,
+      minHr: Math.round(avgHr - 4 - r() * 6),
+      restingHr: Math.round(avgHr - 3 - r() * 3),
+      hrv: Math.round(42 + r() * 30),
+      respiration: Math.round((13 + r() * 3) * 10) / 10,
     });
   }
   return out;
