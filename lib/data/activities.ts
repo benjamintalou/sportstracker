@@ -39,13 +39,18 @@ function withEstimatedDistance(activity: Activity, speeds: Speeds): Activity {
   return { ...activity, distance: Math.round(activity.movingTime * metersPerSecond), averageSpeed: metersPerSecond };
 }
 
-type Options = { moveIq?: boolean; speeds: Speeds };
+type Options = {
+  moveIq?: boolean;
+  speeds: Speeds;
+  /** Narrower range for Move IQ (one Garmin call per day): defaults to the whole range */
+  moveIqRange?: DateRange;
+};
 
 /** Recorded + Move IQ activities of a range for a sport (Move IQ distance estimated from the user's speeds). */
-export async function getRangeActivities(range: DateRange, sport: SportFilter, { moveIq = true, speeds }: Options) {
+export async function getRangeActivities(range: DateRange, sport: SportFilter, { moveIq = true, speeds, moveIqRange = range }: Options) {
   const [recorded, detected] = await Promise.all([
     activitiesBetween(range.from, range.to),
-    moveIq ? moveIqBetween(range.from, range.to) : { activities: [], failed: false },
+    moveIq ? moveIqBetween(moveIqRange.from, moveIqRange.to) : { activities: [], failed: false },
   ]);
   const estimated = detected.activities.map((a) => withEstimatedDistance(a, speeds));
   return {
